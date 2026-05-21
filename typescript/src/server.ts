@@ -39,6 +39,18 @@ app.get("/usecase/*", (req, res) => {
     res.sendFile(path.join(__dirname, "..", "public", "index.html"));
 });
 
+app.get("/api/stats", (req, res) => {
+    const totalRow = db
+        .prepare<[], { total: number | null }>(
+            "SELECT COALESCE(SUM(time_saved_minutes), 0) AS total FROM usecases"
+        )
+        .get();
+
+    res.json({
+        totalTimeSaved: totalRow?.total ?? 0,
+    });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Listening on http://localhost:${PORT}`);

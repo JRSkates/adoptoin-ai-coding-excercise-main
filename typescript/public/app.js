@@ -23,6 +23,7 @@ async function renderList() {
     const res = await fetch("/api/usecases");
     const usecases = await res.json();
     app.innerHTML = `
+        <div class="stats">Total time saved: <span id="total-time-saved">...</span></div>
         <button data-href="/usecase/new">New use case</button>
         <ul class="list">
             ${usecases.map(u => `
@@ -33,6 +34,8 @@ async function renderList() {
             `).join("")}
         </ul>
     `;
+
+    await fetchStats();
 }
 
 async function renderView(id) {
@@ -71,6 +74,13 @@ function renderCreate() {
         const { id } = await res.json();
         navigate(`/usecase/${id}`);
     });
+}
+
+async function fetchStats() {
+    const res = await fetch("/api/stats");
+    const data = await res.json();
+    console.log("Stats:", data);
+    document.getElementById("total-time-saved").textContent = `${data.totalTimeSaved} minutes`;
 }
 
 document.addEventListener("click", (e) => {
