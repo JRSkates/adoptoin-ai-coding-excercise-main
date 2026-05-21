@@ -3,7 +3,7 @@ import path from "path";
 import { randomUUID } from "crypto";
 import db from "./db";
 
-const app = express();
+export const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
 
@@ -24,9 +24,16 @@ app.get("/api/usecases/:id", (req, res) => {
 app.post("/api/usecases", (req, res) => {
     const id = randomUUID();
     const { title, body, ai_tool, time_saved_minutes } = req.body;
+
+    const minutes = Number(time_saved_minutes);
+
+    if (!Number.isInteger(minutes) || minutes < 0) {
+        return res.status(400).json({ error: "time_saved_minutes must be a non-negative integer" });
+    }
+    
     db.prepare(
         "INSERT INTO usecases (id, title, body, ai_tool, time_saved_minutes) VALUES (?, ?, ?, ?, ?)"
-    ).run(id, title, body, ai_tool, time_saved_minutes);
+    ).run(id, title, body, ai_tool, minutes);
     res.json({ id });
 });
 
@@ -86,7 +93,9 @@ app.get("/api/stats", (req, res) => {
     }
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Listening on http://localhost:${PORT}`);
-});
+if (!process.env.VITEST) {
+    const PORT = 3000;
+    app.listen(PORT, () => {
+        console.log(`Listening on http://localhost:${PORT}`);
+    });
+}

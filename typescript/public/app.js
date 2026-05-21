@@ -55,27 +55,58 @@ async function renderView(id) {
 }
 
 function renderCreate() {
-    app.innerHTML = `
-        <button data-href="/">← Back</button>
-        <form id="create-form">
-            <label>Title <input name="title"></label>
-            <label>Body <textarea name="body"></textarea></label>
-            <label>AI tool used <input name="ai_tool"></label>
-            <label>Time saved (minutes) <input name="time_saved_minutes"></label>
-            <button type="submit">Create</button>
-        </form>
-    `;
-    document.getElementById("create-form").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const data = Object.fromEntries(new FormData(e.target));
-        const res = await fetch("/api/usecases", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
+    try{ 
+        app.innerHTML = `
+            <button data-href="/">← Back</button>
+            <form id="create-form">
+                <p id="create-error" class="error" role="alert" style="display:none;"></p>
+                <label>Title <input name="title"></label>
+                <label>Body <textarea name="body"></textarea></label>
+                <label>AI tool used <input name="ai_tool"></label>
+                <label>Time saved (minutes) <input name="time_saved_minutes"></label>
+                <button type="submit">Create</button>
+            </form>
+        `;
+        document.getElementById("create-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const errorEl = document.getElementById("create-error");
+            errorEl.textContent = "";
+            errorEl.style.display = "none";
+
+            const data = Object.fromEntries(new FormData(e.target));
+            const res = await fetch("/api/usecases", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+
+            if (!res.ok) {
+                let message = "Unable to create use case. Please check your input and try again.";
+                try {
+                    const body = await res.json();
+                    if (typeof body?.error === "string" && body.error.trim()) {
+                        message = body.error;
+                    }
+                } catch (_err) {
+                    // Keep fallback message when response is not JSON.
+                }
+
+                errorEl.textContent = message;
+                errorEl.style.display = "block";
+                return;
+            }
+
+            const { id } = await res.json();
+            navigate(`/usecase/${id}`);
         });
-        const { id } = await res.json();
-        navigate(`/usecase/${id}`);
-    });
+    } catch (err) {
+        console.error("Failed to render create form:", err);
+        app.innerHTML = `
+            <button data-href="/">← Back</button>
+            <p>Failed to load form. Please try again later.</p>
+        `;
+    }
+
 }
 
 async function renderStats() {
@@ -85,7 +116,6 @@ async function renderStats() {
 
         const data = await res.json();
         console.log("Stats:", data);
-        //document.getElementById("total-time-saved").textContent = `${data.totalTimeSaved} minutes`;
         
         app.innerHTML = `
             <button data-href="/">← Back</button>
@@ -94,7 +124,7 @@ async function renderStats() {
             <ul class="list">
                 ${data.byTool.map(t => `
                     <li>
-                        <strong>${t.ai_tool}:</strong> ${t.total_time_saved} minutes saved
+                        <strong>${t.ai_tool}:</strong> ${t.usecase_count} use cases, ${t.total_time_saved} minutes saved
                     </li>
                 `).join("")}
             </ul>

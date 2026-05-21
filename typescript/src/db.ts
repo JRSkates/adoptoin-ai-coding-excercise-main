@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 
-const db = new Database("usecases.db");
+const dbFile = process.env.VITEST ? ":memory:" : "usecases.db";
+const db = new Database(dbFile);
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS usecases (
