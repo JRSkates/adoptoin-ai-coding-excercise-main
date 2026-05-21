@@ -54,10 +54,10 @@ app.get("/api/stats", (req, res) => {
             )
             .get();
 
-        const rawByTool = db
+        const byTool = db
             .prepare<[], { ai_tool: string | null; usecase_count: number | null; total_time_saved: number | null }>(
                 `SELECT
-                    ai_tool,
+                    COALESCE(NULLIF(TRIM(ai_tool), ''), 'Unknown') AS ai_tool,
                     COUNT(*) AS usecase_count,
                     COALESCE(SUM(CAST(time_saved_minutes AS INTEGER)), 0) AS total_time_saved
                  FROM usecases
@@ -66,20 +66,20 @@ app.get("/api/stats", (req, res) => {
             )
             .all();
 
-        const byTool = rawByTool
-            .filter((row) =>
-                typeof row.ai_tool === "string" &&
-                row.ai_tool.trim().length > 0 &&
-                Number.isInteger(row.usecase_count) &&
-                (row.usecase_count ?? -1) >= 0 &&
-                Number.isFinite(row.total_time_saved) &&
-                (row.total_time_saved ?? -1) >= 0
-            )
-            .map((row) => ({
-                ai_tool: row.ai_tool!.trim(),
-                usecase_count: row.usecase_count!,
-                total_time_saved: row.total_time_saved!,
-            }));
+        // const byTool = rawByTool
+        //     .filter((row) =>
+        //         typeof row.ai_tool === "string" &&
+        //         row.ai_tool.trim().length > 0 &&
+        //         Number.isInteger(row.usecase_count) &&
+        //         (row.usecase_count ?? -1) >= 0 &&
+        //         Number.isFinite(row.total_time_saved) &&
+        //         (row.total_time_saved ?? -1) >= 0
+        //     )
+        //     .map((row) => ({
+        //         ai_tool: row.ai_tool!.trim(),
+        //         usecase_count: row.usecase_count!,
+        //         total_time_saved: row.total_time_saved!,
+        //     }));
 
         const totalTimeSaved = Number.isFinite(totalRow?.total) ? Number(totalRow!.total) : 0;
 
