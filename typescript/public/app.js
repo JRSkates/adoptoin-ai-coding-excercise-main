@@ -14,6 +14,8 @@ async function render() {
     } else if (path.startsWith("/usecase/")) {
         const id = path.slice("/usecase/".length);
         await renderView(id);
+    } else if (path === "/stats") {
+        await renderStats();
     } else {
         app.textContent = "Not found";
     }
@@ -23,8 +25,8 @@ async function renderList() {
     const res = await fetch("/api/usecases");
     const usecases = await res.json();
     app.innerHTML = `
-        <div class="stats">Total time saved: <span id="total-time-saved">...</span></div>
         <button data-href="/usecase/new">New use case</button>
+        <button data-href="/stats">View stats</button>
         <ul class="list">
             ${usecases.map(u => `
                 <li>
@@ -35,7 +37,7 @@ async function renderList() {
         </ul>
     `;
 
-    await fetchStats();
+    // await fetchStats();
 }
 
 async function renderView(id) {
@@ -76,11 +78,17 @@ function renderCreate() {
     });
 }
 
-async function fetchStats() {
+async function renderStats() {
     const res = await fetch("/api/stats");
     const data = await res.json();
     console.log("Stats:", data);
-    document.getElementById("total-time-saved").textContent = `${data.totalTimeSaved} minutes`;
+    //document.getElementById("total-time-saved").textContent = `${data.totalTimeSaved} minutes`;
+    
+    app.innerHTML = `
+        <button data-href="/">← Back</button>
+        <h2>Statistics</h2>
+        <p>Total time saved across all use cases: <strong>${data.totalTimeSaved} minutes</strong></p>
+    `;
 }
 
 document.addEventListener("click", (e) => {

@@ -46,8 +46,21 @@ app.get("/api/stats", (req, res) => {
         )
         .get();
 
+    const byTool = db
+        .prepare<[], { ai_tool: string; usecase_count: number; total_time_saved: number }>(
+            `SELECT
+                ai_tool,
+                COUNT(*) AS usecase_count,
+                COALESCE(SUM(time_saved_minutes), 0) AS total_time_saved
+             FROM usecases
+             GROUP BY ai_tool
+             ORDER BY total_time_saved DESC`
+        )
+        .all();
+
     res.json({
         totalTimeSaved: totalRow?.total ?? 0,
+        byTool,
     });
 });
 
