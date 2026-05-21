@@ -28,7 +28,7 @@ app.post("/api/usecases", (req, res) => {
     const minutes = Number(time_saved_minutes);
 
     if (!Number.isInteger(minutes) || minutes < 0) {
-        return res.status(400).json({ error: "time_saved_minutes must be a non-negative integer" });
+        return res.status(400).json({ error: "Time saved must be a non-negative number" });
     }
     
     db.prepare(

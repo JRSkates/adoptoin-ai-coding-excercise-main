@@ -36,8 +36,6 @@ async function renderList() {
             `).join("")}
         </ul>
     `;
-
-    // await fetchStats();
 }
 
 async function renderView(id) {
@@ -81,17 +79,8 @@ function renderCreate() {
             });
 
             if (!res.ok) {
-                let message = "Unable to create use case. Please check your input and try again.";
-                try {
-                    const body = await res.json();
-                    if (typeof body?.error === "string" && body.error.trim()) {
-                        message = body.error;
-                    }
-                } catch (_err) {
-                    // Keep fallback message when response is not JSON.
-                }
-
-                errorEl.textContent = message;
+                const body = await res.json();
+                errorEl.textContent = body.error || "Unable to create use case. Please check your input and try again.";
                 errorEl.style.display = "block";
                 return;
             }
@@ -115,7 +104,7 @@ async function renderStats() {
         if (!res.ok) throw new Error(`HTTP error, status: ${res.status}`);
 
         const data = await res.json();
-        console.log("Stats:", data);
+        // console.log("Stats:", data);
         
         app.innerHTML = `
             <button data-href="/">← Back</button>

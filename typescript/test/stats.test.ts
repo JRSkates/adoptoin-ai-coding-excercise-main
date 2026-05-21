@@ -147,7 +147,7 @@ describe.sequential("stats + validation API", () => {
         expect(res.status).toBe(400);
         const body = await res.json();
         expect(body).toEqual({
-            error: "time_saved_minutes must be a non-negative integer",
+            error: "Time saved must be a non-negative number",
         });
     });
 });
