@@ -35,33 +35,55 @@ app.delete("/api/usecases", (req, res) => {
     res.json({ deleted: result.changes });
 });
 
-app.get("/usecase/*", (req, res) => {
+app.get(["/usecase/*", "/stats"], (req, res) => {
     res.sendFile(path.join(__dirname, "..", "public", "index.html"));
 });
 
 app.get("/api/stats", (req, res) => {
-    const totalRow = db
-        .prepare<[], { total: number | null }>(
-            "SELECT COALESCE(SUM(time_saved_minutes), 0) AS total FROM usecases"
-        )
-        .get();
+    try {
+        const totalRow = db
+            .prepare<[], { total: number | null }>(
+                "SELECT COALESCE(SUM(CAST(time_saved_minutes AS INTEGER)), 0) AS total FROM usecases"
+            )
+            .get();
 
-    const byTool = db
-        .prepare<[], { ai_tool: string; usecase_count: number; total_time_saved: number }>(
-            `SELECT
-                ai_tool,
-                COUNT(*) AS usecase_count,
-                COALESCE(SUM(time_saved_minutes), 0) AS total_time_saved
-             FROM usecases
-             GROUP BY ai_tool
-             ORDER BY total_time_saved DESC`
-        )
-        .all();
+        const rawByTool = db
+            .prepare<[], { ai_tool: string | null; usecase_count: number | null; total_time_saved: number | null }>(
+                `SELECT
+                    ai_tool,
+                    COUNT(*) AS usecase_count,
+                    COALESCE(SUM(CAST(time_saved_minutes AS INTEGER)), 0) AS total_time_saved
+                 FROM usecases
+                 GROUP BY ai_tool
+                 ORDER BY total_time_saved DESC`
+            )
+            .all();
 
-    res.json({
-        totalTimeSaved: totalRow?.total ?? 0,
-        byTool,
-    });
+        const byTool = rawByTool
+            .filter((row) =>
+                typeof row.ai_tool === "string" &&
+                row.ai_tool.trim().length > 0 &&
+                Number.isInteger(row.usecase_count) &&
+                (row.usecase_count ?? -1) >= 0 &&
+                Number.isFinite(row.total_time_saved) &&
+                (row.total_time_saved ?? -1) >= 0
+            )
+            .map((row) => ({
+                ai_tool: row.ai_tool!.trim(),
+                usecase_count: row.usecase_count!,
+                total_time_saved: row.total_time_saved!,
+            }));
+
+        const totalTimeSaved = Number.isFinite(totalRow?.total) ? Number(totalRow!.total) : 0;
+
+        res.json({
+            totalTimeSaved,
+            byTool,
+        });
+    } catch (error) {
+        console.error("Error fetching stats:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
 });
 
 const PORT = 3000;

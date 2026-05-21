@@ -79,16 +79,34 @@ function renderCreate() {
 }
 
 async function renderStats() {
-    const res = await fetch("/api/stats");
-    const data = await res.json();
-    console.log("Stats:", data);
-    //document.getElementById("total-time-saved").textContent = `${data.totalTimeSaved} minutes`;
-    
-    app.innerHTML = `
-        <button data-href="/">← Back</button>
-        <h2>Statistics</h2>
-        <p>Total time saved across all use cases: <strong>${data.totalTimeSaved} minutes</strong></p>
-    `;
+    try {
+        const res = await fetch("/api/stats");
+        if (!res.ok) throw new Error(`HTTP error, status: ${res.status}`);
+
+        const data = await res.json();
+        console.log("Stats:", data);
+        //document.getElementById("total-time-saved").textContent = `${data.totalTimeSaved} minutes`;
+        
+        app.innerHTML = `
+            <button data-href="/">← Back</button>
+            <h2>Statistics</h2>
+            <p>Total time saved across all use cases: <strong>${data.totalTimeSaved} minutes</strong></p>
+            <ul class="list">
+                ${data.byTool.map(t => `
+                    <li>
+                        <strong>${t.ai_tool}:</strong> ${t.total_time_saved} minutes saved
+                    </li>
+                `).join("")}
+            </ul>
+        `;
+    } catch (err) {
+        console.error("Failed to load stats:", err);
+        app.innerHTML = `
+            <button data-href="/">← Back</button>
+            <h2>Statistics</h2>
+            <p>Failed to load statistics. Please try again later.</p>
+        `;
+    }
 }
 
 document.addEventListener("click", (e) => {
